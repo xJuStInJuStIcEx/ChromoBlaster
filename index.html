@@ -20,7 +20,7 @@
         }
         #game-container {
             position: relative;
-            height: 80vh;
+            height: 70vh;
             aspect-ratio: 9/16;
             margin-top: 2vh;
             background: #222;
@@ -39,48 +39,73 @@
             right: 10px;
             display: flex;
             justify-content: space-between;
-            font-size: 24px;
+            font-size: 20px;
             font-weight: bold;
             text-shadow: 2px 2px 4px #000;
             pointer-events: none;
         }
-        #controls {
+        #controls-container {
             width: 100%;
             max-width: 600px;
-            height: 18vh;
+            height: 28vh;
             display: flex;
             flex-direction: column;
-            justify-content: center;
-            padding: 10px;
+            justify-content: space-evenly;
+            padding: 5px;
             box-sizing: border-box;
         }
+        #palette-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            background: #222;
+            padding: 8px;
+            border-radius: 20px;
+            margin: 0 auto;
+        }
+        .color-swatch {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            border: 2px solid #444;
+            transition: all 0.2s;
+        }
+        .color-swatch.active {
+            border: 3px solid #fff;
+            transform: scale(1.4);
+            box-shadow: 0 0 10px rgba(255,255,255,0.8);
+        }
+        
         .control-row {
             display: flex;
-            justify-content: space-around;
+            justify-content: space-between;
             width: 100%;
-            margin-bottom: 10px;
+            gap: 5px;
+            padding: 0 5px;
+            box-sizing: border-box;
         }
         button {
             background: #444;
             color: white;
             border: none;
-            padding: 15px 20px;
-            font-size: 18px;
-            border-radius: 8px;
+            padding: 12px 5px;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 6px;
             flex: 1;
-            margin: 0 5px;
             cursor: pointer;
             user-select: none;
         }
-        button:active { background: #666; }
-        #btn-color-preview { width: 40px; height: 40px; border-radius: 50%; display: inline-block; vertical-align: middle; margin-left: 10px; border: 2px solid white;}
-        .weapon-white { border: 2px solid white; background: #ddd !important; color: black !important; }
-        .weapon-color { border: 2px solid #ff00ff; }
+        button:active { background: #666; transform: scale(0.98); }
+        
+        #btn-fire-color { background: #d32f2f; border: 2px solid #ff5252; color: #fff;}
+        #btn-fire-white { background: #ddd; border: 2px solid #fff; color: #000; }
         
         #game-over {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.8); display: none; flex-direction: column;
-            align-items: center; justify-content: center; font-size: 40px; z-index: 10;
+            align-items: center; justify-content: center; font-size: 36px; z-index: 10; text-align: center;
         }
     </style>
 </head>
@@ -94,19 +119,22 @@
         </div>
         <div id="game-over">
             <div>GAME OVER</div>
-            <button onclick="location.reload()" style="margin-top: 20px; flex: none;">Riprova</button>
+            <div style="font-size: 20px; margin-top: 10px;">Punteggio Finale: <span id="final-score">0</span></div>
+            <button onclick="location.reload()" style="margin-top: 20px; flex: none; padding: 15px 30px; font-size: 18px;">Riprova</button>
         </div>
     </div>
 
-    <div id="controls">
+    <div id="controls-container">
+        <div id="palette-container"></div>
+
         <div class="control-row">
-            <button id="btn-left">⬅️ Sinistra</button>
-            <button id="btn-right">Destra ➡️</button>
+            <button id="btn-left">⬅️ SX</button>
+            <button id="btn-cycle">🔄 Colore</button>
+            <button id="btn-right">DX ➡️</button>
         </div>
         <div class="control-row">
-            <button id="btn-weapon">Arma: <span id="weapon-type">Colore</span></button>
-            <button id="btn-cycle">Colore <div id="btn-color-preview"></div></button>
-            <button id="btn-fire" style="background:#d32f2f; font-weight:bold;">🔥 FUOCO</button>
+            <button id="btn-fire-color">🎯 Spara Colore</button>
+            <button id="btn-fire-white">💥 Laser Bianco</button>
         </div>
     </div>
 
@@ -117,12 +145,14 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-// Costanti
 const GAME_WIDTH = 1024;
 const GAME_HEIGHT = 1960;
 const COLS = 16; 
-const BLOCK_SIZE = GAME_WIDTH / COLS; // 64px
-const COLORS = ['#FF3333', '#33FF33', '#3333FF', '#FFFF33', '#FF33FF', '#33FFFF'];
+const BLOCK_SIZE = GAME_WIDTH / COLS;
+
+const COLORS = ['#FF3333', '#33FF33', '#3333FF', '#FFFF33']; 
+const MAX_PIECES = 3; // LIMITE FISSO A 3 TETRAMINI
+
 const TETROMINOES = [
     [{x:0,y:0}, {x:1,y:0}, {x:2,y:0}, {x:3,y:0}], // I
     [{x:0,y:0}, {x:1,y:0}, {x:0,y:1}, {x:1,y:1}], // O
@@ -133,42 +163,60 @@ const TETROMINOES = [
     [{x:0,y:0}, {x:1,y:0}, {x:1,y:1}, {x:2,y:1}]  // Z
 ];
 
-// Stato del Gioco
 let state = {
     pieces: [],
-    floorLevel: 0, // Unità di blocchi (1 unità = BLOCK_SIZE)
+    floorLevel: 0, 
     score: 0,
     time: 0,
     lastThreshold: 0,
     isGameOver: false,
     player: {
         col: Math.floor(COLS / 2),
-        selectedColorIndex: 0,
-        weaponMode: 'color' // 'color' o 'white'
+        selectedColorIndex: 0
     }
 };
 
 let lastTime = 0;
-let spawnTimer = 0;
+let lastSpawnTime = 0;
 
-// Elementi UI
 const uiScore = document.getElementById('score-display');
 const uiTime = document.getElementById('time-display');
-const uiWeaponType = document.getElementById('weapon-type');
-const btnWeapon = document.getElementById('btn-weapon');
-const uiColorPreview = document.getElementById('btn-color-preview');
 const gameOverScreen = document.getElementById('game-over');
+const finalScoreDisplay = document.getElementById('final-score');
+const paletteContainer = document.getElementById('palette-container');
+const btnFireColor = document.getElementById('btn-fire-color');
 
-// Setup Iniziale
-uiColorPreview.style.backgroundColor = COLORS[state.player.selectedColorIndex];
-btnWeapon.classList.add('weapon-color');
+function renderPalette() {
+    paletteContainer.innerHTML = '';
+    COLORS.forEach((color, index) => {
+        let swatch = document.createElement('div');
+        swatch.className = 'color-swatch';
+        if (index === state.player.selectedColorIndex) swatch.classList.add('active');
+        swatch.style.backgroundColor = color;
+        paletteContainer.appendChild(swatch);
+    });
+    // Aggiorna anche il colore del tasto "Spara Colore" per renderlo intuitivo
+    btnFireColor.style.backgroundColor = COLORS[state.player.selectedColorIndex];
+    btnFireColor.style.borderColor = '#fff';
+    btnFireColor.style.color = (COLORS[state.player.selectedColorIndex] === '#FFFF33') ? '#000' : '#fff'; // Testo nero su giallo
+}
+renderPalette();
 
 class Piece {
     constructor(blocks, pixelX, pixelY) {
-        this.blocks = blocks; // Array di {x, y, color} (x, y relativi alla griglia interna del pezzo)
-        this.x = pixelX;      // Posizione assoluta X in pixel
-        this.y = pixelY;      // Posizione assoluta Y in pixel
-        this.speed = 100;     // Pixel al secondo
+        this.blocks = blocks;
+        this.x = pixelX;
+        this.y = pixelY;
+        this.speed = 100;
+    }
+
+    getBoundingBox() {
+        if (this.blocks.length === 0) return { minX: 0, maxX: 0, minY: 0, maxY: 0 };
+        let minX = this.x + Math.min(...this.blocks.map(b => b.x)) * BLOCK_SIZE;
+        let maxX = this.x + (Math.max(...this.blocks.map(b => b.x)) + 1) * BLOCK_SIZE;
+        let minY = this.y + Math.min(...this.blocks.map(b => b.y)) * BLOCK_SIZE;
+        let maxY = this.y + (Math.max(...this.blocks.map(b => b.y)) + 1) * BLOCK_SIZE;
+        return { minX, maxX, minY, maxY };
     }
 
     draw(ctx) {
@@ -182,30 +230,60 @@ class Piece {
     }
 }
 
-function spawnPieces(count) {
-    for (let i = 0; i < count; i++) {
-        let template = TETROMINOES[Math.floor(Math.random() * TETROMINOES.length)];
-        let blocks = template.map(b => ({
-            x: b.x, 
-            y: b.y, 
-            color: COLORS[Math.floor(Math.random() * COLORS.length)]
-        }));
-        
-        let pieceWidth = (Math.max(...blocks.map(b => b.x)) + 1);
+function trySpawnPiece() {
+    if (state.pieces.length >= MAX_PIECES) return;
+    if (state.time - lastSpawnTime < 0.5) return;
+
+    let template = TETROMINOES[Math.floor(Math.random() * TETROMINOES.length)];
+    let blocks = template.map(b => ({
+        x: b.x, 
+        y: b.y, 
+        color: COLORS[Math.floor(Math.random() * COLORS.length)]
+    }));
+    
+    let pieceWidth = (Math.max(...blocks.map(b => b.x)) + 1);
+    let pieceHeight = (Math.max(...blocks.map(b => b.y)) + 1);
+    
+    let maxAttempts = 20;
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
         let randomCol = Math.floor(Math.random() * (COLS - pieceWidth));
-        
-        let newPiece = new Piece(blocks, randomCol * BLOCK_SIZE, -200 - (i * BLOCK_SIZE * 3));
-        state.pieces.push(newPiece);
+        let testX = randomCol * BLOCK_SIZE;
+        let testY = - (pieceHeight * BLOCK_SIZE) - 5; 
+
+        let newBox = {
+            minX: testX,
+            maxX: testX + (pieceWidth * BLOCK_SIZE),
+            minY: testY,
+            maxY: testY + (pieceHeight * BLOCK_SIZE)
+        };
+
+        let overlap = false;
+        for (let p of state.pieces) {
+            let pBox = p.getBoundingBox();
+            // Controlla se le colonne si sovrappongono
+            if (newBox.maxX > pBox.minX && newBox.minX < pBox.maxX) {
+                // Se le colonne sono in comune, assicurati che il nuovo pezzo sia ben al di sopra di quello esistente
+                // pBox.minY è il punto più alto del pezzo vecchio. 
+                // Se è minore di 300px, è troppo vicino alla cima, non spawniamo qui.
+                if (pBox.minY < newBox.maxY + (BLOCK_SIZE * 3)) {
+                    overlap = true;
+                    break;
+                }
+            }
+        }
+
+        if (!overlap) {
+            state.pieces.push(new Piece(blocks, testX, testY));
+            lastSpawnTime = state.time;
+            break;
+        }
     }
 }
 
 function checkRectangle(piece) {
     if (piece.blocks.length < 2) return false;
-    
     let firstColor = piece.blocks[0].color;
-    for (let b of piece.blocks) {
-        if (b.color !== firstColor) return false; // Non è un colore unico
-    }
+    for (let b of piece.blocks) if (b.color !== firstColor) return false;
 
     let minX = Math.min(...piece.blocks.map(b => b.x));
     let maxX = Math.max(...piece.blocks.map(b => b.x));
@@ -215,7 +293,6 @@ function checkRectangle(piece) {
     let width = maxX - minX + 1;
     let height = maxY - minY + 1;
 
-    // Se l'area del bounding box è uguale al numero di blocchi, è un rettangolo perfetto
     return (width * height === piece.blocks.length);
 }
 
@@ -223,7 +300,6 @@ function updateScore(points) {
     state.score += points;
     uiScore.innerText = state.score;
     
-    // Controlla l'abbassamento del pavimento
     let threshold = Math.floor(state.score / 500);
     if (threshold > state.lastThreshold) {
         state.floorLevel = Math.max(0, state.floorLevel - (threshold - state.lastThreshold));
@@ -235,7 +311,7 @@ function processPieceDestruction(pieceIndex) {
     let p = state.pieces[pieceIndex];
     if (checkRectangle(p)) {
         updateScore(p.blocks.length * 10);
-        state.pieces.splice(pieceIndex, 1); // Esplode
+        state.pieces.splice(pieceIndex, 1);
     }
 }
 
@@ -245,7 +321,6 @@ function splitPiece(piece, pieceIndex) {
         return;
     }
     
-    // BFS per trovare i componenti connessi
     let visited = new Set();
     let components = [];
     
@@ -280,15 +355,11 @@ function splitPiece(piece, pieceIndex) {
     }
 
     if (components.length > 1) {
-        // Rimuovi il pezzo originale
         state.pieces.splice(pieceIndex, 1);
-        
-        // Crea nuovi pezzi indipendenti
         for (let comp of components) {
             let minX = Math.min(...comp.map(b => b.x));
             let minY = Math.min(...comp.map(b => b.y));
             
-            // Ricalibra le coordinate relative al nuovo bounding box
             let newBlocks = comp.map(b => ({
                 x: b.x - minX,
                 y: b.y - minY,
@@ -303,12 +374,11 @@ function splitPiece(piece, pieceIndex) {
     }
 }
 
-function fire() {
+function shoot(weaponType) {
     let targetX = state.player.col * BLOCK_SIZE;
     let lowestBlockInfo = null;
     let lowestY = -Infinity;
 
-    // Trova il blocco più in basso nella colonna del giocatore
     for (let i = 0; i < state.pieces.length; i++) {
         let p = state.pieces[i];
         for (let j = 0; j < p.blocks.length; j++) {
@@ -316,7 +386,6 @@ function fire() {
             let absX = p.x + b.x * BLOCK_SIZE;
             let absY = p.y + b.y * BLOCK_SIZE;
             
-            // Check se il blocco si trova visivamente nella colonna del cannone
             if (Math.abs(absX - targetX) < 10) { 
                 if (absY > lowestY) {
                     lowestY = absY;
@@ -330,12 +399,10 @@ function fire() {
         let p = lowestBlockInfo.piece;
         let pIdx = lowestBlockInfo.pieceIndex;
         
-        if (state.player.weaponMode === 'white') {
-            // Laser Bianco: Distrugge
+        if (weaponType === 'white') {
             p.blocks.splice(lowestBlockInfo.blockIndex, 1);
             splitPiece(p, pIdx);
-        } else {
-            // Raggio Colorato: Aggiunge sotto
+        } else if (weaponType === 'color') {
             let b = lowestBlockInfo.block;
             p.blocks.push({
                 x: b.x,
@@ -353,34 +420,24 @@ function update(dt) {
     state.time += dt;
     uiTime.innerText = Math.floor(state.time);
 
-    // Gestione Spawns in base al tempo
-    spawnTimer += dt;
-    let currentWaveSize = Math.floor(state.time / 30) + 1; // 0-30->1, 31-60->2, ecc.
-    
-    if (spawnTimer >= 3) { // Spawna ogni 3 secondi
-        spawnPieces(currentWaveSize);
-        spawnTimer = 0;
-    }
+    trySpawnPiece();
 
     let floorY = GAME_HEIGHT - (state.floorLevel * BLOCK_SIZE);
     let cannonY = floorY - BLOCK_SIZE;
 
-    // Game Over condition
     if (cannonY <= 0) {
         state.isGameOver = true;
+        finalScoreDisplay.innerText = state.score;
         gameOverScreen.style.display = 'flex';
         return;
     }
 
-    // Aggiornamento posizioni
     for (let i = state.pieces.length - 1; i >= 0; i--) {
         let p = state.pieces[i];
         p.y += p.speed * dt;
 
-        // Collisione col pavimento
         let maxY = Math.max(...p.blocks.map(b => p.y + b.y * BLOCK_SIZE)) + BLOCK_SIZE;
         if (maxY >= floorY) {
-            // Elimina il pezzo, alza il pavimento
             state.pieces.splice(i, 1);
             state.floorLevel++;
         }
@@ -388,8 +445,8 @@ function update(dt) {
 }
 
 function draw() {
-    // Sfondo e griglia
     ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+    
     ctx.strokeStyle = '#333';
     ctx.lineWidth = 1;
     for(let i=1; i<COLS; i++) {
@@ -399,12 +456,10 @@ function draw() {
         ctx.stroke();
     }
 
-    // Pavimento
     let floorHeightPx = state.floorLevel * BLOCK_SIZE;
     ctx.fillStyle = '#666';
     ctx.fillRect(0, GAME_HEIGHT - floorHeightPx, GAME_WIDTH, floorHeightPx);
 
-    // Cannone
     let cannonX = state.player.col * BLOCK_SIZE;
     let cannonY = GAME_HEIGHT - floorHeightPx - BLOCK_SIZE;
     ctx.fillStyle = '#AAA';
@@ -414,8 +469,7 @@ function draw() {
     ctx.lineTo(cannonX + BLOCK_SIZE/2, cannonY);
     ctx.fill();
 
-    // Linea di mira
-    ctx.strokeStyle = state.player.weaponMode === 'white' ? 'rgba(255,255,255,0.2)' : 'rgba(255,0,255,0.2)';
+    ctx.strokeStyle = 'rgba(255,255,255,0.1)';
     ctx.setLineDash([10, 15]);
     ctx.beginPath();
     ctx.moveTo(cannonX + BLOCK_SIZE/2, cannonY);
@@ -423,7 +477,6 @@ function draw() {
     ctx.stroke();
     ctx.setLineDash([]);
 
-    // Pezzi
     for (let p of state.pieces) {
         p.draw(ctx);
     }
@@ -432,7 +485,7 @@ function draw() {
 function loop(timestamp) {
     let dt = (timestamp - lastTime) / 1000;
     lastTime = timestamp;
-    if (dt > 0.1) dt = 0.1; // previene salti giganti se si cambia tab
+    if (dt > 0.1) dt = 0.1; 
 
     update(dt);
     draw();
@@ -442,44 +495,28 @@ function loop(timestamp) {
     }
 }
 
-// Input Handling
+// Input Controllers
 function moveLeft() { if(state.player.col > 0) state.player.col--; }
 function moveRight() { if(state.player.col < COLS - 1) state.player.col++; }
 function cycleColor() {
     state.player.selectedColorIndex = (state.player.selectedColorIndex + 1) % COLORS.length;
-    uiColorPreview.style.backgroundColor = COLORS[state.player.selectedColorIndex];
-}
-function toggleWeapon() {
-    if (state.player.weaponMode === 'color') {
-        state.player.weaponMode = 'white';
-        btnWeapon.classList.remove('weapon-color');
-        btnWeapon.classList.add('weapon-white');
-        uiWeaponType.innerText = "Bianca";
-    } else {
-        state.player.weaponMode = 'color';
-        btnWeapon.classList.remove('weapon-white');
-        btnWeapon.classList.add('weapon-color');
-        uiWeaponType.innerText = "Colore";
-    }
+    renderPalette(); 
 }
 
-// Eventi Bottoni UI
 document.getElementById('btn-left').addEventListener('click', moveLeft);
 document.getElementById('btn-right').addEventListener('click', moveRight);
 document.getElementById('btn-cycle').addEventListener('click', cycleColor);
-document.getElementById('btn-weapon').addEventListener('click', toggleWeapon);
-document.getElementById('btn-fire').addEventListener('click', fire);
+document.getElementById('btn-fire-color').addEventListener('click', () => shoot('color'));
+document.getElementById('btn-fire-white').addEventListener('click', () => shoot('white'));
 
-// Controlli Tastiera (per test su PC)
 window.addEventListener('keydown', (e) => {
     if(e.code === 'ArrowLeft') moveLeft();
     if(e.code === 'ArrowRight') moveRight();
     if(e.code === 'ArrowUp' || e.code === 'KeyC') cycleColor();
-    if(e.code === 'ShiftLeft' || e.code === 'ShiftRight') toggleWeapon();
-    if(e.code === 'Space') fire();
+    if(e.code === 'Space') shoot('color');
+    if(e.code === 'ShiftLeft' || e.code === 'ShiftRight') shoot('white');
 });
 
-// Avvio
 requestAnimationFrame((timestamp) => {
     lastTime = timestamp;
     requestAnimationFrame(loop);
