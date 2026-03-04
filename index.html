@@ -31,7 +31,7 @@
             width: 100%;
             height: 100%;
             display: block;
-            cursor: pointer; /* Indica che si può cliccare */
+            cursor: pointer;
         }
         #ui-layer {
             position: absolute;
@@ -277,18 +277,10 @@ function trySpawnPiece() {
     }
 }
 
-// ALGORITMO ROTAZIONE AL TOCCO
 function rotatePiece(pieceIndex) {
     let p = state.pieces[pieceIndex];
-    
-    // Calcola le nuove coordinate locali ruotate (90° orario: x -> -y, y -> x)
-    let newBlocks = p.blocks.map(b => ({
-        x: -b.y,
-        y: b.x,
-        color: b.color
-    }));
+    let newBlocks = p.blocks.map(b => ({ x: -b.y, y: b.x, color: b.color }));
 
-    // Normalizza i blocchi in modo che non abbiano coordinate negative locali
     let minLocalX = Math.min(...newBlocks.map(b => b.x));
     let minLocalY = Math.min(...newBlocks.map(b => b.y));
     newBlocks.forEach(b => {
@@ -296,25 +288,20 @@ function rotatePiece(pieceIndex) {
         b.y -= minLocalY;
     });
 
-    // Salva stato originale in caso di collsione
     let originalBlocks = p.blocks;
     let originalX = p.x;
     
     p.blocks = newBlocks;
 
-    // Aggiustamento sui bordi (Wall Kick)
     let maxAbsX = p.x + (Math.max(...p.blocks.map(b => b.x)) + 1) * BLOCK_SIZE;
-    if (maxAbsX > GAME_WIDTH) p.x -= (maxAbsX - GAME_WIDTH); // Spinge via dal bordo destro
-    if (p.x < 0) p.x = 0; // Spinge via dal bordo sinistro
+    if (maxAbsX > GAME_WIDTH) p.x -= (maxAbsX - GAME_WIDTH); 
+    if (p.x < 0) p.x = 0; 
 
-    // Controllo Sovrapposizione Anti-Incastro
     let newBox = p.getBoundingBox();
     let overlap = false;
     for (let i = 0; i < state.pieces.length; i++) {
-        if (i === pieceIndex) continue; // Ignora se stesso
+        if (i === pieceIndex) continue;
         let otherBox = state.pieces[i].getBoundingBox();
-        
-        // Semplice controllo AABB (Axis-Aligned Bounding Box)
         if (newBox.maxX > otherBox.minX && newBox.minX < otherBox.maxX &&
             newBox.maxY > otherBox.minY && newBox.minY < otherBox.maxY) {
             overlap = true;
@@ -322,25 +309,21 @@ function rotatePiece(pieceIndex) {
         }
     }
 
-    // Se c'è sovrapposizione, annulla la rotazione
     if (overlap) {
         p.blocks = originalBlocks;
         p.x = originalX;
     }
 }
 
-// EVENT LISTENER PER IL TOUCH/CLICK SUL CANVAS
 canvas.addEventListener('pointerdown', (e) => {
-    e.preventDefault(); // Previene comportamenti indesiderati del browser mobile
+    e.preventDefault(); 
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
     
-    // Coordinate del tocco scalate rispetto al Canvas reale
     const clickX = (e.clientX - rect.left) * scaleX;
     const clickY = (e.clientY - rect.top) * scaleY;
 
-    // Controlla se abbiamo cliccato sopra un blocco di qualche pezzo
     for (let i = state.pieces.length - 1; i >= 0; i--) {
         let p = state.pieces[i];
         let clicked = false;
@@ -354,7 +337,7 @@ canvas.addEventListener('pointerdown', (e) => {
         }
         if (clicked) {
             rotatePiece(i);
-            break; // Ruota solo un pezzo alla volta se sono vicini
+            break;
         }
     }
 });
@@ -494,7 +477,8 @@ function splitPiece(piece, pieceIndex) {
     }
 }
 
-function shoot(weaponType) {
+// NUOVA FUNZIONE: Calcola il bersaglio attuale
+function getTargetBlockInfo() {
     let targetX = state.player.col * BLOCK_SIZE;
     let lowestBlockInfo = null;
     let lowestY = -Infinity;
@@ -506,24 +490,31 @@ function shoot(weaponType) {
             let absX = p.x + b.x * BLOCK_SIZE;
             let absY = p.y + b.y * BLOCK_SIZE;
             
-            if (Math.abs(absX - targetX) < 10) { 
+            // Usiamo una tolleranza minima per evitare problemi di virgola mobile
+            if (Math.abs(absX - targetX) < 5) { 
                 if (absY > lowestY) {
                     lowestY = absY;
-                    lowestBlockInfo = { pieceIndex: i, blockIndex: j, piece: p, block: b };
+                    lowestBlockInfo = { pieceIndex: i, blockIndex: j, piece: p, block: b, absX, absY };
                 }
             }
         }
     }
+    return lowestBlockInfo;
+}
 
-    if (lowestBlockInfo) {
-        let p = lowestBlockInfo.piece;
-        let pIdx = lowestBlockInfo.pieceIndex;
+
+function shoot(weaponType) {
+    let target = getTargetBlockInfo(); // Usa la nuova funzione centralizzata
+
+    if (target) {
+        let p = target.piece;
+        let pIdx = target.pieceIndex;
         
         if (weaponType === 'white') {
-            p.blocks.splice(lowestBlockInfo.blockIndex, 1);
+            p.blocks.splice(target.blockIndex, 1);
             splitPiece(p, pIdx);
         } else if (weaponType === 'color') {
-            let b = lowestBlockInfo.block;
+            let b = target.block;
             p.blocks.push({
                 x: b.x,
                 y: b.y + 1,
@@ -567,6 +558,7 @@ function update(dt) {
 function draw() {
     ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
     
+    // 1. Griglia
     ctx.strokeStyle = '#333';
     ctx.lineWidth = 1;
     for(let i=1; i<COLS; i++) {
@@ -576,11 +568,17 @@ function draw() {
         ctx.stroke();
     }
 
+    // Pavimento
     let floorHeightPx = state.floorLevel * BLOCK_SIZE;
     ctx.fillStyle = '#666';
     ctx.fillRect(0, GAME_HEIGHT - floorHeightPx, GAME_WIDTH, floorHeightPx);
 
+    // 2. EVINDENZIATORE COLONNA (Opzione 1)
     let cannonX = state.player.col * BLOCK_SIZE;
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.04)'; // Grigio chiarissimo
+    ctx.fillRect(cannonX, 0, BLOCK_SIZE, GAME_HEIGHT - floorHeightPx);
+
+    // Cannone
     let cannonY = GAME_HEIGHT - floorHeightPx - BLOCK_SIZE;
     ctx.fillStyle = '#AAA';
     ctx.beginPath();
@@ -589,7 +587,8 @@ function draw() {
     ctx.lineTo(cannonX + BLOCK_SIZE/2, cannonY);
     ctx.fill();
 
-    ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+    // Linea tratteggiata (resa più leggera per non confondere col mirino)
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
     ctx.setLineDash([10, 15]);
     ctx.beginPath();
     ctx.moveTo(cannonX + BLOCK_SIZE/2, cannonY);
@@ -597,8 +596,38 @@ function draw() {
     ctx.stroke();
     ctx.setLineDash([]);
 
+    // Disegna Pezzi
     for (let p of state.pieces) {
         p.draw(ctx);
+    }
+
+    // 3. DISEGNA MIRINO (Opzione 2)
+    let target = getTargetBlockInfo();
+    if (target) {
+        let tx = target.absX;
+        let ty = target.absY;
+        let s = BLOCK_SIZE;
+        let l = 16; // Lunghezza degli angoli del mirino
+        
+        // Effetto pulsante col tempo
+        let pulse = Math.abs(Math.sin(state.time * 6)) * 0.4 + 0.6; // Opacità da 0.6 a 1.0
+        
+        ctx.strokeStyle = COLORS[state.player.selectedColorIndex]; // Stesso colore selezionato
+        ctx.globalAlpha = pulse;
+        ctx.lineWidth = 4;
+        
+        ctx.beginPath();
+        // Angolo Alto-Sinistra
+        ctx.moveTo(tx, ty + l); ctx.lineTo(tx, ty); ctx.lineTo(tx + l, ty);
+        // Angolo Alto-Destra
+        ctx.moveTo(tx + s - l, ty); ctx.lineTo(tx + s, ty); ctx.lineTo(tx + s, ty + l);
+        // Angolo Basso-Destra
+        ctx.moveTo(tx + s, ty + s - l); ctx.lineTo(tx + s, ty + s); ctx.lineTo(tx + s - l, ty + s);
+        // Angolo Basso-Sinistra
+        ctx.moveTo(tx + l, ty + s); ctx.lineTo(tx, ty + s); ctx.lineTo(tx, ty + s - l);
+        
+        ctx.stroke();
+        ctx.globalAlpha = 1.0; // Resetta opacità
     }
 }
 
@@ -623,15 +652,14 @@ function cycleColor() {
     renderPalette(); 
 }
 
-// SISTEMA DI MOVIMENTO CONTINUO TENENDO PREMUTO IL TASTO
 function addHoldListener(btnId, action) {
     let btn = document.getElementById(btnId);
     let intervalId = null;
     
     const start = (e) => {
         e.preventDefault();
-        action(); // Esegui la prima volta istantaneamente
-        intervalId = setInterval(action, 100); // Ripeti ogni 100ms
+        action(); 
+        intervalId = setInterval(action, 100); 
     };
     
     const stop = (e) => {
@@ -642,13 +670,12 @@ function addHoldListener(btnId, action) {
 
     btn.addEventListener('pointerdown', start);
     btn.addEventListener('pointerup', stop);
-    btn.addEventListener('pointerleave', stop); // Se il dito scivola via dal tasto
+    btn.addEventListener('pointerleave', stop); 
 }
 
 addHoldListener('btn-left', moveLeft);
 addHoldListener('btn-right', moveRight);
 
-// I tasti a singolo tocco rimangono normali
 document.getElementById('btn-cycle').addEventListener('click', cycleColor);
 document.getElementById('btn-fire-color').addEventListener('pointerdown', (e) => { e.preventDefault(); shoot('color'); });
 document.getElementById('btn-fire-white').addEventListener('pointerdown', (e) => { e.preventDefault(); shoot('white'); });
@@ -669,5 +696,6 @@ requestAnimationFrame((timestamp) => {
 </script>
 </body>
 </html>
+
 
 
