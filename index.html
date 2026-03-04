@@ -31,6 +31,7 @@
             width: 100%;
             height: 100%;
             display: block;
+            cursor: pointer; /* Indica che si può cliccare */
         }
         #ui-layer {
             position: absolute;
@@ -96,6 +97,7 @@
             flex: 1;
             cursor: pointer;
             user-select: none;
+            touch-action: manipulation;
         }
         button:active { background: #666; transform: scale(0.98); }
         
@@ -151,7 +153,7 @@ const COLS = 16;
 const BLOCK_SIZE = GAME_WIDTH / COLS;
 
 const COLORS = ['#FF3333', '#33FF33', '#3333FF', '#FFFF33']; 
-const MAX_PIECES = 3; // LIMITE FISSO A 3 TETRAMINI
+const MAX_PIECES = 3; 
 
 const TETROMINOES = [
     [{x:0,y:0}, {x:1,y:0}, {x:2,y:0}, {x:3,y:0}], // I
@@ -195,10 +197,9 @@ function renderPalette() {
         swatch.style.backgroundColor = color;
         paletteContainer.appendChild(swatch);
     });
-    // Aggiorna anche il colore del tasto "Spara Colore" per renderlo intuitivo
     btnFireColor.style.backgroundColor = COLORS[state.player.selectedColorIndex];
     btnFireColor.style.borderColor = '#fff';
-    btnFireColor.style.color = (COLORS[state.player.selectedColorIndex] === '#FFFF33') ? '#000' : '#fff'; // Testo nero su giallo
+    btnFireColor.style.color = (COLORS[state.player.selectedColorIndex] === '#FFFF33') ? '#000' : '#fff'; 
 }
 renderPalette();
 
@@ -260,11 +261,7 @@ function trySpawnPiece() {
         let overlap = false;
         for (let p of state.pieces) {
             let pBox = p.getBoundingBox();
-            // Controlla se le colonne si sovrappongono
             if (newBox.maxX > pBox.minX && newBox.minX < pBox.maxX) {
-                // Se le colonne sono in comune, assicurati che il nuovo pezzo sia ben al di sopra di quello esistente
-                // pBox.minY è il punto più alto del pezzo vecchio. 
-                // Se è minore di 300px, è troppo vicino alla cima, non spawniamo qui.
                 if (pBox.minY < newBox.maxY + (BLOCK_SIZE * 3)) {
                     overlap = true;
                     break;
@@ -280,20 +277,140 @@ function trySpawnPiece() {
     }
 }
 
-function checkRectangle(piece) {
-    if (piece.blocks.length < 2) return false;
-    let firstColor = piece.blocks[0].color;
-    for (let b of piece.blocks) if (b.color !== firstColor) return false;
+// ALGORITMO ROTAZIONE AL TOCCO
+function rotatePiece(pieceIndex) {
+    let p = state.pieces[pieceIndex];
+    
+    // Calcola le nuove coordinate locali ruotate (90° orario: x -> -y, y -> x)
+    let newBlocks = p.blocks.map(b => ({
+        x: -b.y,
+        y: b.x,
+        color: b.color
+    }));
 
-    let minX = Math.min(...piece.blocks.map(b => b.x));
-    let maxX = Math.max(...piece.blocks.map(b => b.x));
-    let minY = Math.min(...piece.blocks.map(b => b.y));
-    let maxY = Math.max(...piece.blocks.map(b => b.y));
+    // Normalizza i blocchi in modo che non abbiano coordinate negative locali
+    let minLocalX = Math.min(...newBlocks.map(b => b.x));
+    let minLocalY = Math.min(...newBlocks.map(b => b.y));
+    newBlocks.forEach(b => {
+        b.x -= minLocalX;
+        b.y -= minLocalY;
+    });
 
-    let width = maxX - minX + 1;
-    let height = maxY - minY + 1;
+    // Salva stato originale in caso di collsione
+    let originalBlocks = p.blocks;
+    let originalX = p.x;
+    
+    p.blocks = newBlocks;
 
-    return (width * height === piece.blocks.length);
+    // Aggiustamento sui bordi (Wall Kick)
+    let maxAbsX = p.x + (Math.max(...p.blocks.map(b => b.x)) + 1) * BLOCK_SIZE;
+    if (maxAbsX > GAME_WIDTH) p.x -= (maxAbsX - GAME_WIDTH); // Spinge via dal bordo destro
+    if (p.x < 0) p.x = 0; // Spinge via dal bordo sinistro
+
+    // Controllo Sovrapposizione Anti-Incastro
+    let newBox = p.getBoundingBox();
+    let overlap = false;
+    for (let i = 0; i < state.pieces.length; i++) {
+        if (i === pieceIndex) continue; // Ignora se stesso
+        let otherBox = state.pieces[i].getBoundingBox();
+        
+        // Semplice controllo AABB (Axis-Aligned Bounding Box)
+        if (newBox.maxX > otherBox.minX && newBox.minX < otherBox.maxX &&
+            newBox.maxY > otherBox.minY && newBox.minY < otherBox.maxY) {
+            overlap = true;
+            break;
+        }
+    }
+
+    // Se c'è sovrapposizione, annulla la rotazione
+    if (overlap) {
+        p.blocks = originalBlocks;
+        p.x = originalX;
+    }
+}
+
+// EVENT LISTENER PER IL TOUCH/CLICK SUL CANVAS
+canvas.addEventListener('pointerdown', (e) => {
+    e.preventDefault(); // Previene comportamenti indesiderati del browser mobile
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    
+    // Coordinate del tocco scalate rispetto al Canvas reale
+    const clickX = (e.clientX - rect.left) * scaleX;
+    const clickY = (e.clientY - rect.top) * scaleY;
+
+    // Controlla se abbiamo cliccato sopra un blocco di qualche pezzo
+    for (let i = state.pieces.length - 1; i >= 0; i--) {
+        let p = state.pieces[i];
+        let clicked = false;
+        for (let b of p.blocks) {
+            let bx = p.x + b.x * BLOCK_SIZE;
+            let by = p.y + b.y * BLOCK_SIZE;
+            if (clickX >= bx && clickX <= bx + BLOCK_SIZE && clickY >= by && clickY <= by + BLOCK_SIZE) {
+                clicked = true;
+                break;
+            }
+        }
+        if (clicked) {
+            rotatePiece(i);
+            break; // Ruota solo un pezzo alla volta se sono vicini
+        }
+    }
+});
+
+
+function findLargestColorRectangle(piece) {
+    let bestRect = null;
+    let maxArea = 0;
+
+    let colorGroups = {};
+    for (let b of piece.blocks) {
+        if (!colorGroups[b.color]) colorGroups[b.color] = [];
+        colorGroups[b.color].push(b);
+    }
+
+    for (let color in colorGroups) {
+        let blocks = colorGroups[color];
+        let blockMap = new Set(blocks.map(b => `${b.x},${b.y}`));
+
+        for (let b of blocks) {
+            let startX = b.x;
+            let startY = b.y;
+
+            let maxWidth = 1;
+            while (blockMap.has(`${startX + maxWidth},${startY}`)) maxWidth++;
+
+            for (let w = 2; w <= maxWidth; w++) {
+                let h = 1;
+                let valid = true;
+                
+                while (valid) {
+                    for (let dx = 0; dx < w; dx++) {
+                        if (!blockMap.has(`${startX + dx},${startY + h}`)) {
+                            valid = false;
+                            break;
+                        }
+                    }
+                    if (valid) h++;
+                }
+
+                if (w >= 2 && h >= 2) {
+                    let area = w * h;
+                    if (area > maxArea) {
+                        maxArea = area;
+                        bestRect = { color, startX, startY, w, h, blocksToRemove: new Set() };
+                        for (let dy = 0; dy < h; dy++) {
+                            for (let dx = 0; dx < w; dx++) {
+                                bestRect.blocksToRemove.add(`${startX + dx},${startY + dy}`);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return bestRect;
 }
 
 function updateScore(points) {
@@ -309,9 +426,12 @@ function updateScore(points) {
 
 function processPieceDestruction(pieceIndex) {
     let p = state.pieces[pieceIndex];
-    if (checkRectangle(p)) {
-        updateScore(p.blocks.length * 10);
-        state.pieces.splice(pieceIndex, 1);
+    let rect = findLargestColorRectangle(p);
+    
+    if (rect) {
+        updateScore(rect.blocksToRemove.size * 10);
+        p.blocks = p.blocks.filter(b => !rect.blocksToRemove.has(`${b.x},${b.y}`));
+        splitPiece(p, pieceIndex);
     }
 }
 
@@ -354,7 +474,7 @@ function splitPiece(piece, pieceIndex) {
         }
     }
 
-    if (components.length > 1) {
+    if (components.length > 1 || piece.blocks.length !== components[0].length) {
         state.pieces.splice(pieceIndex, 1);
         for (let comp of components) {
             let minX = Math.min(...comp.map(b => b.x));
@@ -503,11 +623,35 @@ function cycleColor() {
     renderPalette(); 
 }
 
-document.getElementById('btn-left').addEventListener('click', moveLeft);
-document.getElementById('btn-right').addEventListener('click', moveRight);
+// SISTEMA DI MOVIMENTO CONTINUO TENENDO PREMUTO IL TASTO
+function addHoldListener(btnId, action) {
+    let btn = document.getElementById(btnId);
+    let intervalId = null;
+    
+    const start = (e) => {
+        e.preventDefault();
+        action(); // Esegui la prima volta istantaneamente
+        intervalId = setInterval(action, 100); // Ripeti ogni 100ms
+    };
+    
+    const stop = (e) => {
+        e.preventDefault();
+        if (intervalId) clearInterval(intervalId);
+        intervalId = null;
+    };
+
+    btn.addEventListener('pointerdown', start);
+    btn.addEventListener('pointerup', stop);
+    btn.addEventListener('pointerleave', stop); // Se il dito scivola via dal tasto
+}
+
+addHoldListener('btn-left', moveLeft);
+addHoldListener('btn-right', moveRight);
+
+// I tasti a singolo tocco rimangono normali
 document.getElementById('btn-cycle').addEventListener('click', cycleColor);
-document.getElementById('btn-fire-color').addEventListener('click', () => shoot('color'));
-document.getElementById('btn-fire-white').addEventListener('click', () => shoot('white'));
+document.getElementById('btn-fire-color').addEventListener('pointerdown', (e) => { e.preventDefault(); shoot('color'); });
+document.getElementById('btn-fire-white').addEventListener('pointerdown', (e) => { e.preventDefault(); shoot('white'); });
 
 window.addEventListener('keydown', (e) => {
     if(e.code === 'ArrowLeft') moveLeft();
