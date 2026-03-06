@@ -4,6 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Chroma Sculptor</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Chroma">
+    <link rel="apple-touch-icon" href="data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' fill='%23222'/%3E%3Crect x='128' y='128' width='128' height='128' fill='%23FF3333'/%3E%3Crect x='256' y='128' width='128' height='128' fill='%2333FF33'/%3E%3Crect x='128' y='256' width='128' height='128' fill='%233333FF'/%3E%3Crect x='256' y='256' width='128' height='128' fill='%23FFFF33'/%3E%3C/svg%3E">
+    <link id="manifest-link" rel="manifest" href="">
+    <meta name="theme-color" content="#111111">
+
     <style>
         body {
             margin: 0;
@@ -17,7 +26,55 @@
             height: 100vh;
             overflow: hidden;
             touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
         }
+
+        /* --- SCHERMATA DI AVVIO (SPLASH SCREEN) --- */
+        #start-screen {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            
+            /* ISTRUZIONE GRAFICA: 
+               Per mettere la tua immagine di sfondo, cancella il colore #111 e scrivi:
+               background: url('nome-della-tua-immagine-splash.jpg') center/cover no-repeat; 
+            */
+            background: #111; 
+            
+            z-index: 50; /* Sta sopra a tutto */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #start-screen h1 {
+            font-size: 38px;
+            text-align: center;
+            text-shadow: 2px 2px 5px #000;
+            margin-bottom: 50px;
+            /* Se la tua immagine ha già il titolo disegnato sopra, puoi nascondere questo testo scrivendo: display: none; */
+        }
+
+        #btn-start-game {
+            background: #28a745;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            padding: 20px 40px;
+            border: 3px solid #fff;
+            border-radius: 15px;
+            box-shadow: 0 0 15px rgba(40, 167, 69, 0.8);
+            cursor: pointer;
+            /* ISTRUZIONE GRAFICA BOTTONE START: 
+               Se hai un bottone grafico, scrivi:
+               background: url('tuo-bottone-start.png') center/contain no-repeat;
+               color: transparent; border: none; box-shadow: none;
+            */
+        }
+        #btn-start-game:active { transform: scale(0.95); }
+
+        /* --- AREA DI GIOCO --- */
         #game-container {
             position: relative;
             height: 70vh;
@@ -26,83 +83,60 @@
             background: #222;
             border: 2px solid #555;
             box-sizing: border-box;
+            display: none; /* Nascosto finché non si preme Start */
         }
         canvas {
-            width: 100%;
-            height: 100%;
-            display: block;
-            cursor: pointer;
+            width: 100%; height: 100%; display: block; cursor: pointer;
         }
         #ui-layer {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            right: 10px;
-            display: flex;
-            justify-content: space-between;
-            font-size: 20px;
-            font-weight: bold;
-            text-shadow: 2px 2px 4px #000;
-            pointer-events: none;
+            position: absolute; top: 10px; left: 10px; right: 10px;
+            display: flex; justify-content: space-between;
+            font-size: 20px; font-weight: bold; text-shadow: 2px 2px 4px #000; pointer-events: none;
         }
+
+        /* --- CONTROLLI IN BASSO --- */
         #controls-container {
-            width: 100%;
-            max-width: 600px;
-            height: 28vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-evenly;
-            padding: 5px;
-            box-sizing: border-box;
+            width: 100%; max-width: 600px; height: 28vh;
+            display: none; /* Nascosto finché non si preme Start */
+            flex-direction: column; justify-content: space-evenly;
+            padding: 5px; box-sizing: border-box;
         }
         #palette-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 15px;
-            background: #222;
-            padding: 8px;
-            border-radius: 20px;
-            margin: 0 auto;
+            display: flex; justify-content: center; align-items: center; gap: 15px;
+            background: #222; padding: 8px; border-radius: 20px; margin: 0 auto;
         }
         .color-swatch {
-            width: 22px;
-            height: 22px;
-            border-radius: 50%;
-            border: 2px solid #444;
-            transition: all 0.2s;
+            width: 22px; height: 22px; border-radius: 50%; border: 2px solid #444; transition: all 0.2s;
         }
-        .color-swatch.active {
-            border: 3px solid #fff;
-            transform: scale(1.4);
-            box-shadow: 0 0 10px rgba(255,255,255,0.8);
-        }
+        .color-swatch.active { border: 3px solid #fff; transform: scale(1.4); box-shadow: 0 0 10px rgba(255,255,255,0.8); }
         
         .control-row {
-            display: flex;
-            justify-content: space-between;
-            width: 100%;
-            gap: 5px;
-            padding: 0 5px;
-            box-sizing: border-box;
+            display: flex; justify-content: space-between; width: 100%; gap: 5px; padding: 0 5px; box-sizing: border-box;
         }
-        button {
-            background: #444;
-            color: white;
-            border: none;
-            padding: 12px 5px;
-            font-size: 14px;
-            font-weight: bold;
-            border-radius: 6px;
-            flex: 1;
-            cursor: pointer;
-            user-select: none;
-            touch-action: manipulation;
+
+        /* STILE BASE DEI BOTTONI */
+        button.game-btn {
+            background: #444; color: white; border: none; padding: 12px 5px;
+            font-size: 14px; font-weight: bold; border-radius: 6px; flex: 1;
+            cursor: pointer; touch-action: manipulation;
+            
+            /* ISTRUZIONI GRAFICA BOTTONI UX:
+               Per usare le tue immagini sui bottoni di gioco, aggiungi l'immagine a ogni ID specifico qui sotto,
+               e imposta "color: transparent" se non vuoi vedere il testo scritto sopra.
+            */
+            background-size: contain; 
+            background-position: center; 
+            background-repeat: no-repeat;
         }
-        button:active { background: #666; transform: scale(0.98); }
+        button.game-btn:active { transform: scale(0.95); filter: brightness(0.8); }
         
-        #btn-fire-color { background: #d32f2f; border: 2px solid #ff5252; color: #fff;}
-        #btn-fire-white { background: #ddd; border: 2px solid #fff; color: #000; }
+        /* ISTRUZIONI: Inserisci le tue immagini qui sostituendo i background colorati con: url('nomefile.png') */
+        #btn-left { /* background-image: url('freccia-sx.png'); color: transparent; */ }
+        #btn-right { /* background-image: url('freccia-dx.png'); color: transparent; */ }
+        #btn-cycle { /* background-image: url('tasto-cambio-colore.png'); color: transparent; */ }
+        
+        #btn-fire-color { background-color: #d32f2f; border: 2px solid #ff5252; color: #fff; }
+        #btn-fire-white { background-color: #ddd; border: 2px solid #fff; color: #000; /* background-image: url('laser-bianco.png'); color: transparent; border: none; */ }
         
         #game-over {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -113,6 +147,13 @@
 </head>
 <body>
 
+    <!-- SCHERMATA DI AVVIO -->
+    <div id="start-screen">
+        <h1>CHROMA SCULPTOR</h1>
+        <button id="btn-start-game">START GAME!</button>
+    </div>
+
+    <!-- GIOCO -->
     <div id="game-container">
         <canvas id="gameCanvas" width="1024" height="1960"></canvas>
         <div id="ui-layer">
@@ -122,25 +163,98 @@
         <div id="game-over">
             <div>GAME OVER</div>
             <div style="font-size: 20px; margin-top: 10px;">Punteggio Finale: <span id="final-score">0</span></div>
-            <button onclick="location.reload()" style="margin-top: 20px; flex: none; padding: 15px 30px; font-size: 18px;">Riprova</button>
+            <button class="game-btn" onclick="location.reload()" style="margin-top: 20px; flex: none; padding: 15px 30px; font-size: 18px;">Riprova</button>
         </div>
     </div>
 
+    <!-- CONTROLLI -->
     <div id="controls-container">
         <div id="palette-container"></div>
 
         <div class="control-row">
-            <button id="btn-left">⬅️ SX</button>
-            <button id="btn-cycle">🔄 Colore</button>
-            <button id="btn-right">DX ➡️</button>
+            <button id="btn-left" class="game-btn">⬅️ SX</button>
+            <button id="btn-cycle" class="game-btn">🔄 Colore</button>
+            <button id="btn-right" class="game-btn">DX ➡️</button>
         </div>
         <div class="control-row">
-            <button id="btn-fire-color">🎯 Spara Colore</button>
-            <button id="btn-fire-white">💥 Laser Bianco</button>
+            <button id="btn-fire-color" class="game-btn">🎯 Spara Colore</button>
+            <button id="btn-fire-white" class="game-btn">💥 Laser Bianco</button>
         </div>
     </div>
 
 <script>
+/**
+ * INIZIALIZZAZIONE PWA (FULLSCREEN NATIVO)
+ */
+const svgIcon = "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' fill='%23222'/%3E%3Crect x='128' y='128' width='128' height='128' fill='%23FF3333'/%3E%3Crect x='256' y='128' width='128' height='128' fill='%2333FF33'/%3E%3Crect x='128' y='256' width='128' height='128' fill='%233333FF'/%3E%3Crect x='256' y='256' width='128' height='128' fill='%23FFFF33'/%3E%3C/svg%3E";
+
+const manifestData = {
+    name: "Chroma Sculptor",
+    short_name: "Chroma",
+    start_url: ".",
+    display: "fullscreen", /* Impostato su fullscreen per la PWA */
+    background_color: "#111111",
+    theme_color: "#111111",
+    icons: [{ src: svgIcon, sizes: "512x512", type: "image/svg+xml", purpose: "any maskable" }]
+};
+
+const manifestBlob = new Blob([JSON.stringify(manifestData)], {type: 'application/manifest+json'});
+document.getElementById('manifest-link').href = URL.createObjectURL(manifestBlob);
+
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        const swCode = `
+            self.addEventListener('install', (e) => { self.skipWaiting(); });
+            self.addEventListener('activate', (e) => { e.waitUntil(clients.claim()); });
+            self.addEventListener('fetch', (e) => { });
+        `;
+        const swBlob = new Blob([swCode], {type: 'text/javascript'});
+        navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(err => console.log(err));
+    });
+}
+
+/**
+ * LOGICA FULL SCREEN E START GAME
+ */
+const startScreen = document.getElementById('start-screen');
+const gameContainer = document.getElementById('game-container');
+const controlsContainer = document.getElementById('controls-container');
+const btnStartGame = document.getElementById('btn-start-game');
+
+let gameStarted = false;
+
+// Funzione per forzare il Fullscreen del Browser (Android/PC)
+function requestFullScreen() {
+    let elem = document.documentElement;
+    if (elem.requestFullscreen) {
+        elem.requestFullscreen().catch(err => console.log("Fullscreen negato:", err));
+    } else if (elem.webkitRequestFullscreen) { /* Safari/iOS iPad */
+        elem.webkitRequestFullscreen();
+    } else if (elem.msRequestFullscreen) { /* IE11 */
+        elem.msRequestFullscreen();
+    }
+}
+
+btnStartGame.addEventListener('click', () => {
+    // 1. Richiedi Fullscreen
+    requestFullScreen();
+    
+    // 2. Nascondi lo splash screen
+    startScreen.style.display = 'none';
+    
+    // 3. Mostra i contenitori di gioco
+    gameContainer.style.display = 'block';
+    controlsContainer.style.display = 'flex';
+    
+    // 4. Avvia il motore di gioco
+    if (!gameStarted) {
+        gameStarted = true;
+        lastTime = performance.now();
+        requestAnimationFrame(loop);
+    }
+});
+
+
 /**
  * CORE DEL GIOCO
  */
@@ -152,6 +266,7 @@ const GAME_HEIGHT = 1960;
 const COLS = 16; 
 const BLOCK_SIZE = GAME_WIDTH / COLS;
 
+// ISTRUZIONE GRAFICA: Puoi sostituire questi codici esadecimali (#FF3333) con i colori esatti della tua palette grafica!
 const COLORS = ['#FF3333', '#33FF33', '#3333FF', '#FFFF33']; 
 const MAX_PIECES = 3; 
 
@@ -197,6 +312,9 @@ function renderPalette() {
         swatch.style.backgroundColor = color;
         paletteContainer.appendChild(swatch);
     });
+    
+    // Aggiornamento dinamico del bottone "Spara Colore"
+    // Se usi una tua grafica fissa, puoi commentare le 3 righe qui sotto!
     btnFireColor.style.backgroundColor = COLORS[state.player.selectedColorIndex];
     btnFireColor.style.borderColor = '#fff';
     btnFireColor.style.color = (COLORS[state.player.selectedColorIndex] === '#FFFF33') ? '#000' : '#fff'; 
@@ -283,14 +401,10 @@ function rotatePiece(pieceIndex) {
 
     let minLocalX = Math.min(...newBlocks.map(b => b.x));
     let minLocalY = Math.min(...newBlocks.map(b => b.y));
-    newBlocks.forEach(b => {
-        b.x -= minLocalX;
-        b.y -= minLocalY;
-    });
+    newBlocks.forEach(b => { b.x -= minLocalX; b.y -= minLocalY; });
 
     let originalBlocks = p.blocks;
     let originalX = p.x;
-    
     p.blocks = newBlocks;
 
     let maxAbsX = p.x + (Math.max(...p.blocks.map(b => b.x)) + 1) * BLOCK_SIZE;
@@ -309,10 +423,7 @@ function rotatePiece(pieceIndex) {
         }
     }
 
-    if (overlap) {
-        p.blocks = originalBlocks;
-        p.x = originalX;
-    }
+    if (overlap) { p.blocks = originalBlocks; p.x = originalX; }
 }
 
 canvas.addEventListener('pointerdown', (e) => {
@@ -335,10 +446,7 @@ canvas.addEventListener('pointerdown', (e) => {
                 break;
             }
         }
-        if (clicked) {
-            rotatePiece(i);
-            break;
-        }
+        if (clicked) { rotatePiece(i); break; }
     }
 });
 
@@ -358,21 +466,16 @@ function findLargestColorRectangle(piece) {
         let blockMap = new Set(blocks.map(b => `${b.x},${b.y}`));
 
         for (let b of blocks) {
-            let startX = b.x;
-            let startY = b.y;
-
+            let startX = b.x; let startY = b.y;
             let maxWidth = 1;
             while (blockMap.has(`${startX + maxWidth},${startY}`)) maxWidth++;
 
             for (let w = 2; w <= maxWidth; w++) {
-                let h = 1;
-                let valid = true;
-                
+                let h = 1; let valid = true;
                 while (valid) {
                     for (let dx = 0; dx < w; dx++) {
                         if (!blockMap.has(`${startX + dx},${startY + h}`)) {
-                            valid = false;
-                            break;
+                            valid = false; break;
                         }
                     }
                     if (valid) h++;
@@ -420,8 +523,7 @@ function processPieceDestruction(pieceIndex) {
 
 function splitPiece(piece, pieceIndex) {
     if (piece.blocks.length === 0) {
-        state.pieces.splice(pieceIndex, 1);
-        return;
+        state.pieces.splice(pieceIndex, 1); return;
     }
     
     let visited = new Set();
@@ -437,20 +539,13 @@ function splitPiece(piece, pieceIndex) {
     for (let b of piece.blocks) {
         let key = `${b.x},${b.y}`;
         if (!visited.has(key)) {
-            let comp = [];
-            let queue = [b];
-            visited.add(key);
-            
+            let comp = []; let queue = [b]; visited.add(key);
             while (queue.length > 0) {
-                let curr = queue.shift();
-                comp.push(curr);
+                let curr = queue.shift(); comp.push(curr);
                 let neighbors = getAdjacents(curr);
                 for (let n of neighbors) {
                     let nKey = `${n.x},${n.y}`;
-                    if (!visited.has(nKey)) {
-                        visited.add(nKey);
-                        queue.push(n);
-                    }
+                    if (!visited.has(nKey)) { visited.add(nKey); queue.push(n); }
                 }
             }
             components.push(comp);
@@ -462,22 +557,14 @@ function splitPiece(piece, pieceIndex) {
         for (let comp of components) {
             let minX = Math.min(...comp.map(b => b.x));
             let minY = Math.min(...comp.map(b => b.y));
-            
-            let newBlocks = comp.map(b => ({
-                x: b.x - minX,
-                y: b.y - minY,
-                color: b.color
-            }));
-            
+            let newBlocks = comp.map(b => ({ x: b.x - minX, y: b.y - minY, color: b.color }));
             let newAbsX = piece.x + (minX * BLOCK_SIZE);
             let newAbsY = piece.y + (minY * BLOCK_SIZE);
-            
             state.pieces.push(new Piece(newBlocks, newAbsX, newAbsY));
         }
     }
 }
 
-// NUOVA FUNZIONE: Calcola il bersaglio attuale
 function getTargetBlockInfo() {
     let targetX = state.player.col * BLOCK_SIZE;
     let lowestBlockInfo = null;
@@ -490,7 +577,6 @@ function getTargetBlockInfo() {
             let absX = p.x + b.x * BLOCK_SIZE;
             let absY = p.y + b.y * BLOCK_SIZE;
             
-            // Usiamo una tolleranza minima per evitare problemi di virgola mobile
             if (Math.abs(absX - targetX) < 5) { 
                 if (absY > lowestY) {
                     lowestY = absY;
@@ -502,9 +588,8 @@ function getTargetBlockInfo() {
     return lowestBlockInfo;
 }
 
-
 function shoot(weaponType) {
-    let target = getTargetBlockInfo(); // Usa la nuova funzione centralizzata
+    let target = getTargetBlockInfo(); 
 
     if (target) {
         let p = target.piece;
@@ -516,9 +601,7 @@ function shoot(weaponType) {
         } else if (weaponType === 'color') {
             let b = target.block;
             p.blocks.push({
-                x: b.x,
-                y: b.y + 1,
-                color: COLORS[state.player.selectedColorIndex]
+                x: b.x, y: b.y + 1, color: COLORS[state.player.selectedColorIndex]
             });
             processPieceDestruction(pIdx);
         }
@@ -526,7 +609,7 @@ function shoot(weaponType) {
 }
 
 function update(dt) {
-    if (state.isGameOver) return;
+    if (state.isGameOver || !gameStarted) return;
 
     state.time += dt;
     uiTime.innerText = Math.floor(state.time);
@@ -540,46 +623,43 @@ function update(dt) {
         state.isGameOver = true;
         finalScoreDisplay.innerText = state.score;
         gameOverScreen.style.display = 'flex';
+        // Forza l'uscita dal fullscreen se in game over (Opzionale)
+        if (document.exitFullscreen) document.exitFullscreen().catch(()=>{});
         return;
     }
 
     for (let i = state.pieces.length - 1; i >= 0; i--) {
         let p = state.pieces[i];
         p.y += p.speed * dt;
-
         let maxY = Math.max(...p.blocks.map(b => p.y + b.y * BLOCK_SIZE)) + BLOCK_SIZE;
-        if (maxY >= floorY) {
-            state.pieces.splice(i, 1);
-            state.floorLevel++;
-        }
+        if (maxY >= floorY) { state.pieces.splice(i, 1); state.floorLevel++; }
     }
 }
 
 function draw() {
     ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
     
-    // 1. Griglia
     ctx.strokeStyle = '#333';
     ctx.lineWidth = 1;
     for(let i=1; i<COLS; i++) {
-        ctx.beginPath();
-        ctx.moveTo(i * BLOCK_SIZE, 0);
-        ctx.lineTo(i * BLOCK_SIZE, GAME_HEIGHT);
-        ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(i * BLOCK_SIZE, 0); ctx.lineTo(i * BLOCK_SIZE, GAME_HEIGHT); ctx.stroke();
     }
 
-    // Pavimento
     let floorHeightPx = state.floorLevel * BLOCK_SIZE;
     ctx.fillStyle = '#666';
     ctx.fillRect(0, GAME_HEIGHT - floorHeightPx, GAME_WIDTH, floorHeightPx);
 
-    // 2. EVINDENZIATORE COLONNA (Opzione 1)
     let cannonX = state.player.col * BLOCK_SIZE;
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.04)'; // Grigio chiarissimo
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.04)'; 
     ctx.fillRect(cannonX, 0, BLOCK_SIZE, GAME_HEIGHT - floorHeightPx);
 
-    // Cannone
     let cannonY = GAME_HEIGHT - floorHeightPx - BLOCK_SIZE;
+    
+    // ISTRUZIONE GRAFICA CANNONE: 
+    // Se hai un'immagine per il cannone puoi disegnarla sul canvas usando: 
+    // const cannonImg = new Image(); cannonImg.src = 'tuo-cannone.png';
+    // ctx.drawImage(cannonImg, cannonX, cannonY, BLOCK_SIZE, BLOCK_SIZE);
+    // (Al momento c'è il triangolo grigio predefinito qui sotto)
     ctx.fillStyle = '#AAA';
     ctx.beginPath();
     ctx.moveTo(cannonX, cannonY + BLOCK_SIZE);
@@ -587,51 +667,35 @@ function draw() {
     ctx.lineTo(cannonX + BLOCK_SIZE/2, cannonY);
     ctx.fill();
 
-    // Linea tratteggiata (resa più leggera per non confondere col mirino)
     ctx.strokeStyle = 'rgba(255,255,255,0.08)';
     ctx.setLineDash([10, 15]);
     ctx.beginPath();
-    ctx.moveTo(cannonX + BLOCK_SIZE/2, cannonY);
-    ctx.lineTo(cannonX + BLOCK_SIZE/2, 0);
-    ctx.stroke();
+    ctx.moveTo(cannonX + BLOCK_SIZE/2, cannonY); ctx.lineTo(cannonX + BLOCK_SIZE/2, 0); ctx.stroke();
     ctx.setLineDash([]);
 
-    // Disegna Pezzi
-    for (let p of state.pieces) {
-        p.draw(ctx);
-    }
+    for (let p of state.pieces) p.draw(ctx);
 
-    // 3. DISEGNA MIRINO (Opzione 2)
     let target = getTargetBlockInfo();
     if (target) {
-        let tx = target.absX;
-        let ty = target.absY;
-        let s = BLOCK_SIZE;
-        let l = 16; // Lunghezza degli angoli del mirino
+        let tx = target.absX; let ty = target.absY; let s = BLOCK_SIZE; let l = 16; 
+        let pulse = Math.abs(Math.sin(state.time * 6)) * 0.4 + 0.6; 
         
-        // Effetto pulsante col tempo
-        let pulse = Math.abs(Math.sin(state.time * 6)) * 0.4 + 0.6; // Opacità da 0.6 a 1.0
-        
-        ctx.strokeStyle = COLORS[state.player.selectedColorIndex]; // Stesso colore selezionato
-        ctx.globalAlpha = pulse;
-        ctx.lineWidth = 4;
+        ctx.strokeStyle = COLORS[state.player.selectedColorIndex]; 
+        ctx.globalAlpha = pulse; ctx.lineWidth = 4;
         
         ctx.beginPath();
-        // Angolo Alto-Sinistra
         ctx.moveTo(tx, ty + l); ctx.lineTo(tx, ty); ctx.lineTo(tx + l, ty);
-        // Angolo Alto-Destra
         ctx.moveTo(tx + s - l, ty); ctx.lineTo(tx + s, ty); ctx.lineTo(tx + s, ty + l);
-        // Angolo Basso-Destra
         ctx.moveTo(tx + s, ty + s - l); ctx.lineTo(tx + s, ty + s); ctx.lineTo(tx + s - l, ty + s);
-        // Angolo Basso-Sinistra
         ctx.moveTo(tx + l, ty + s); ctx.lineTo(tx, ty + s); ctx.lineTo(tx, ty + s - l);
-        
         ctx.stroke();
-        ctx.globalAlpha = 1.0; // Resetta opacità
+        ctx.globalAlpha = 1.0; 
     }
 }
 
 function loop(timestamp) {
+    if (!gameStarted) return; // Non avviare la logica finché non premi Start
+    
     let dt = (timestamp - lastTime) / 1000;
     lastTime = timestamp;
     if (dt > 0.1) dt = 0.1; 
@@ -644,29 +708,16 @@ function loop(timestamp) {
     }
 }
 
-// Input Controllers
 function moveLeft() { if(state.player.col > 0) state.player.col--; }
 function moveRight() { if(state.player.col < COLS - 1) state.player.col++; }
-function cycleColor() {
-    state.player.selectedColorIndex = (state.player.selectedColorIndex + 1) % COLORS.length;
-    renderPalette(); 
-}
+function cycleColor() { state.player.selectedColorIndex = (state.player.selectedColorIndex + 1) % COLORS.length; renderPalette(); }
 
 function addHoldListener(btnId, action) {
     let btn = document.getElementById(btnId);
     let intervalId = null;
     
-    const start = (e) => {
-        e.preventDefault();
-        action(); 
-        intervalId = setInterval(action, 100); 
-    };
-    
-    const stop = (e) => {
-        e.preventDefault();
-        if (intervalId) clearInterval(intervalId);
-        intervalId = null;
-    };
+    const start = (e) => { e.preventDefault(); action(); intervalId = setInterval(action, 100); };
+    const stop = (e) => { e.preventDefault(); if (intervalId) clearInterval(intervalId); intervalId = null; };
 
     btn.addEventListener('pointerdown', start);
     btn.addEventListener('pointerup', stop);
@@ -688,14 +739,10 @@ window.addEventListener('keydown', (e) => {
     if(e.code === 'ShiftLeft' || e.code === 'ShiftRight') shoot('white');
 });
 
-requestAnimationFrame((timestamp) => {
-    lastTime = timestamp;
-    requestAnimationFrame(loop);
-});
+// Non invochiamo più il loop qui in fondo. Il loop si avvia dal click sul bottone "START GAME!".
 
 </script>
 </body>
 </html>
-
 
 
