@@ -133,14 +133,44 @@
         }
         button.game-btn:active { transform: scale(0.95); filter: brightness(0.8); }
         
-        /* ISTRUZIONI: Inserisci le tue immagini qui sostituendo i background colorati con: url('nomefile.png') */
-        #btn-left { background-image: url('LEFT-BTN.JPG'); color: transparent; */ }
-        #btn-right { background-image: url('RIGHT-BTN.JPG'); color: transparent; */ }
-        #btn-cycle { background-image: url('COLOR-BTN.png'); color: transparent; */ }
+        /* ISTRUZIONI: Inserisci le tue immagini qui */
+        #btn-left { 
+            background-image: url('LEFT-BTN.JPG'); 
+            color: transparent; 
+            background-color: transparent; /* Nasconde il grigio del bottone */
+            border: none; /* Toglie i bordi */
+            height: 50px; /* <--- MODIFICA QUESTO NUMERO PER INGRANDIRE/RIMPICCIOLIRE */
+        }
         
-        #btn-fire-color { background-color: #d32f2f; border: 2px solid #ff5252; color: #fff; }
-        #btn-fire-white { background-color: #ddd; border: 2px solid #fff; color: #000; /* background-image: url('laser-bianco.png'); color: transparent; border: none; */ }
+        #btn-right { 
+            background-image: url('RIGHT-BTN.JPG'); 
+            color: transparent; 
+            background-color: transparent;
+            border: none;
+            height: 50px; /* <--- MODIFICA QUESTO NUMERO */
+        }
         
+        #btn-cycle { 
+            background-image: url('COLOR-BTN.png'); 
+            color: transparent; 
+            background-color: transparent;
+            border: none;
+            height: 50px; /* <--- MODIFICA QUESTO NUMERO */
+        }
+        
+        #btn-fire-color { 
+            background-color: #d32f2f; 
+            border: 2px solid #ff5252; 
+            color: #fff; 
+            /* Se un giorno avrai un'immagine anche qui, farai la stessa cosa */
+        }
+        
+        #btn-fire-white { 
+            background-color: #ddd; 
+            border: 2px solid #fff; 
+            color: #000; 
+        }
+
         #game-over {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.8); display: none; flex-direction: column; */
