@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Chroma Sculptor</title>
 
-    <!-- PWA Meta Tags -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Chroma">
@@ -35,7 +34,7 @@
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
             background: url('STARTGAME.png') center/cover no-repeat;
-            background-color: #111; /* Fallback se l'immagine non carica subito */
+            background-color: #111;
             z-index: 50;
             display: flex;
             flex-direction: column;
@@ -44,7 +43,7 @@
         }
 
         #start-screen h1 {
-            display: none; /* Nascosto perché c'è già la tua grafica nell'immagine */
+            display: none;
         }
 
         #btn-start-game {
@@ -56,7 +55,7 @@
             border: none; 
             box-shadow: none;
             cursor: pointer;
-            margin-top: 600px; /* Sposta il bottone un po' più in basso rispetto al centro se serve */
+            margin-top: 600px;
         }
         #btn-start-game:active { transform: scale(0.95); }
 
@@ -72,17 +71,21 @@
             display: none;
         }
         canvas {
-            width: 100%; height: 100%; display: block; cursor: pointer;
+            width: 100%;
+            height: 100%; display: block; cursor: pointer;
         }
         #ui-layer {
-            position: absolute; top: 10px; left: 10px; right: 10px;
+            position: absolute;
+            top: 10px; left: 10px; right: 10px;
             display: flex; justify-content: space-between;
-            font-size: 20px; font-weight: bold; text-shadow: 2px 2px 4px #000; pointer-events: none;
+            font-size: 20px; font-weight: bold; text-shadow: 2px 2px 4px #000;
+            pointer-events: none;
         }
 
         /* --- CONTROLLI IN BASSO --- */
         #controls-container {
-            width: 100%; max-width: 600px; height: 28vh;
+            width: 100%;
+            max-width: 600px; height: 28vh;
             display: none; 
             flex-direction: column; justify-content: space-evenly;
             padding: 5px; box-sizing: border-box;
@@ -90,13 +93,13 @@
 
         /* --- NUOVA BARRA COLORI (CONTENITORE) --- */
         #palette-container {
-            display: flex; 
+            display: flex;
             justify-content: center; 
             align-items: center; 
-            gap: 0px; /* Spazio tra i vari colori */
+            gap: 0px; 
             background: url('COLOR-BAR.png') center/contain no-repeat;
             background-color: transparent;
-            padding: 15px 20px; /* Spazio interno per non far uscire i bottoni dalla barra */
+            padding: 15px 20px; 
             margin: 0 auto;
             width: 90%; 
             max-width: 400px;
@@ -104,8 +107,8 @@
 
         /* --- SINGOLI PULSANTI COLORE --- */
         .color-swatch {
-            width: 50px; /* Dimensione dei pallini colore */
-            height: 50px; 
+            width: 50px;
+            height: 50px;
             background-size: contain;
             background-position: center;
             background-repeat: no-repeat;
@@ -118,12 +121,13 @@
         .color-swatch:active { transform: scale(1.0); }
         
         .control-row {
-            display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 5px; padding: 0 5px; box-sizing: border-box;
+            display: flex;
+            justify-content: space-between; align-items: center; width: 100%; gap: 5px; padding: 0 5px; box-sizing: border-box;
         }
 
         /* --- STILE BASE DEI BOTTONI DI GIOCO --- */
         button.game-btn {
-            background-size: contain; 
+            background-size: contain;
             background-position: center; 
             background-repeat: no-repeat;
             background-color: transparent;
@@ -136,41 +140,43 @@
         
         /* ISTRUZIONI: Bottoni personalizzati */
         #btn-left { 
-            background-image: url('LEFT-BTN.jpg'); 
+            background-image: url('LEFT-BTN.jpg');
             height: 50px; 
         }
         
         #btn-right { 
-            background-image: url('RIGHT-BTN.jpg'); 
+            background-image: url('RIGHT-BTN.jpg');
             height: 50px; 
         }
         
-        /* PULSANTE CICLO: Disabilitato temporaneamente per la futura funzione */
+        /* PULSANTE ROTAZIONE (Ex Cambio Colore): Ora è pienamente attivo */
         #btn-cycle { 
-            background-image: url('COLOR-BTN.jpg'); 
+            background-image: url('COLOR-BTN.jpg');
             height: 50px; 
-            opacity: 0.5; /* Lo rende semi-trasparente per far capire che è inattivo */
-            pointer-events: none; /* Impedisce che venga cliccato */
+            /* Rimosse opacity e pointer-events: ora il pulsante è cliccabile! */
         }
         
         #btn-fire-color { 
-            background-image: url('FIRE-BTN.png'); 
+            background-image: url('FIRE-BTN.png');
             height: 50px; 
         }
         
         #btn-fire-white { 
-            background-image: url('LASER-BTN.png'); 
+            background-image: url('LASER-BTN.png');
             height: 50px; 
+            transition: opacity 0.2s; /* Aggiunta transizione fluida per il cooldown */
         }
 
         /* --- SCHERMATA GAME OVER --- */
         #game-over {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85); /* Sfondo scuro per far risaltare il logo */
-            display: none; flex-direction: column;
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: none;
+            flex-direction: column;
             align-items: center; justify-content: center; z-index: 10; text-align: center;
         }
-        /* Logo personalizzato Game Over */
+        
         #game-over-logo {
             width: 80%;
             height: 100px;
@@ -181,37 +187,32 @@
 </head>
 <body>
 
-    <!-- SCHERMATA DI AVVIO -->
     <div id="start-screen">
-        <div style="position: absolute; top: 10px; left: 10px; color: yellow; z-index: 100; font-size: 16px;">CHROMA SCULPTOR beta version 0.81b</div>
+        <div style="position: absolute; top: 10px; left: 10px; color: yellow; z-index: 100; font-size: 16px;">CHROMA SCULPTOR beta version 0.85b (Audio & Laser Update)</div>
         <h1>CHROMA SCULPTOR</h1> 
         <button id="btn-start-game">START GAME!</button>
     </div>
 
-    <!-- GIOCO -->
     <div id="game-container">
         <canvas id="gameCanvas" width="1024" height="1960"></canvas>
+     
         <div id="ui-layer">
             <div>Score: <span id="score-display">0</span></div>
             <div>Time: <span id="time-display">0</span>s</div>
         </div>
         <div id="game-over">
-            <!-- Qui viene caricata la tua immagine GAMEOVER.png dal CSS -->
             <div id="game-over-logo"></div>
-            
             <div style="font-size: 20px; margin-top: 10px; color: white; text-shadow: 2px 2px 4px #000;">Punteggio Finale: <span id="final-score">0</span></div>
             <button onclick="location.reload()" style="margin-top: 20px; flex: none; padding: 15px 30px; font-size: 18px; font-weight: bold; background-color: #d32f2f; color: white; border: 2px solid #fff; border-radius: 10px; cursor: pointer;">Riprova</button>
         </div>
     </div>
 
-    <!-- CONTROLLI -->
     <div id="controls-container">
-        <!-- Contenitore della barra colori: i pulsantini vengono generati dal JavaScript qui dentro -->
         <div id="palette-container"></div>
 
         <div class="control-row">
             <button id="btn-left" class="game-btn">⬅️ SX</button>
-            <button id="btn-cycle" class="game-btn">🔄 Colore (Disabilitato)</button>
+            <button id="btn-cycle" class="game-btn">🔄 Ruota</button>
             <button id="btn-right" class="game-btn">DX ➡️</button>
         </div>
         <div class="control-row">
@@ -222,10 +223,25 @@
 
 <script>
 /**
- * INIZIALIZZAZIONE PWA (FULLSCREEN NATIVO)
+ * GESTIONE AUDIO (AUDIO MANAGER)
+ */
+const audioCache = {};
+
+function playSound(filename) {
+    if (!audioCache[filename]) {
+        audioCache[filename] = new Audio(filename);
+    }
+    // Clona il nodo audio per permettere l'accavallamento rapido dei suoni (es. fuoco rapido)
+    let sound = audioCache[filename].cloneNode();
+    sound.play().catch(e => {
+        // Ignora gli errori di autoplay se l'utente non ha ancora interagito
+    });
+}
+
+/**
+ * INIZIALIZZAZIONE PWA 
  */
 const svgIcon = "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' fill='%23222'/%3E%3Crect x='128' y='128' width='128' height='128' fill='%23FF3333'/%3E%3Crect x='256' y='128' width='128' height='128' fill='%23FFFF33'/%3E%3Crect x='128' y='256' width='128' height='128' fill='%2333FF33'/%3E%3Crect x='256' y='256' width='128' height='128' fill='%233333FF'/%3E%3C/svg%3E";
-
 const manifestData = {
     name: "Chroma Sculptor",
     short_name: "Chroma",
@@ -235,7 +251,6 @@ const manifestData = {
     theme_color: "#111111",
     icons: [{ src: svgIcon, sizes: "512x512", type: "image/svg+xml", purpose: "any maskable" }]
 };
-
 const manifestBlob = new Blob([JSON.stringify(manifestData)], {type: 'application/manifest+json'});
 document.getElementById('manifest-link').href = URL.createObjectURL(manifestBlob);
 
@@ -260,7 +275,6 @@ const controlsContainer = document.getElementById('controls-container');
 const btnStartGame = document.getElementById('btn-start-game');
 
 let gameStarted = false;
-
 function requestFullScreen() {
     let elem = document.documentElement;
     if (elem.requestFullscreen) {
@@ -295,17 +309,14 @@ const GAME_WIDTH = 1024;
 const GAME_HEIGHT = 1960;
 const COLS = 16; 
 const BLOCK_SIZE = GAME_WIDTH / COLS;
-
-// NUOVO ORDINE COLORI: Rosso, Giallo, Verde, Blu
 const COLORS = ['#FF3333', '#FFFF33', '#33FF33', '#3333FF']; 
-const MAX_PIECES = 3; 
+const MAX_PIECES = 3;
 
-// Mappatura delle tue immagini per i colori Accesi / Spenti
 const COLOR_SPRITES = [
-    { on: 'RED-ON.png', off: 'RED-OFF.png' },       // Indice 0: Rosso
-    { on: 'YELLOW-ON.png', off: 'YELLOW-OFF.png' }, // Indice 1: Giallo
-    { on: 'GREEN-ON.png', off: 'GREEN-OFF.png' },   // Indice 2: Verde
-    { on: 'BLUE-ON.png', off: 'BLUE-OFF.png' }      // Indice 3: Blu
+    { on: 'RED-ON.png', off: 'RED-OFF.png' },       
+    { on: 'YELLOW-ON.png', off: 'YELLOW-OFF.png' }, 
+    { on: 'GREEN-ON.png', off: 'GREEN-OFF.png' },   
+    { on: 'BLUE-ON.png', off: 'BLUE-OFF.png' }      
 ];
 
 let state = {
@@ -315,9 +326,10 @@ let state = {
     time: 0,
     lastThreshold: 0,
     isGameOver: false,
+    laserCooldown: 0, // Inizializza il cooldown a 0 secondi
     player: {
         col: Math.floor(COLS / 2),
-        selectedColorIndex: 0 // Il colore iniziale è il Rosso (Indice 0)
+        selectedColorIndex: 0 
     }
 };
 
@@ -330,29 +342,24 @@ const gameOverScreen = document.getElementById('game-over');
 const finalScoreDisplay = document.getElementById('final-score');
 const paletteContainer = document.getElementById('palette-container');
 
-// FUNZIONE AGGIORNATA: Selezione diretta tramite i tuoi Sprite
 function renderPalette() {
     paletteContainer.innerHTML = '';
-    
     COLORS.forEach((color, index) => {
         let swatch = document.createElement('div');
         swatch.className = 'color-swatch';
         
-        // Se è il colore selezionato mostra l'immagine ON, altrimenti l'immagine OFF
         let imgSrc = (index === state.player.selectedColorIndex) ? COLOR_SPRITES[index].on : COLOR_SPRITES[index].off;
         swatch.style.backgroundImage = `url('${imgSrc}')`;
         
-        // Listener per il tocco: cambia direttamente il colore e aggiorna
         swatch.addEventListener('pointerdown', (e) => {
             e.preventDefault();
             state.player.selectedColorIndex = index;
-            renderPalette(); // Aggiorna visivamente tutti i bottoncini
+            renderPalette(); 
         });
         
         paletteContainer.appendChild(swatch);
     });
 }
-// Avvia la renderizzazione iniziale della barra
 renderPalette();
 
 const TETROMINOES = [
@@ -403,7 +410,6 @@ function trySpawnPiece() {
         y: b.y, 
         color: COLORS[Math.floor(Math.random() * COLORS.length)]
     }));
-    
     let pieceWidth = (Math.max(...blocks.map(b => b.x)) + 1);
     let pieceHeight = (Math.max(...blocks.map(b => b.y)) + 1);
     
@@ -411,15 +417,13 @@ function trySpawnPiece() {
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
         let randomCol = Math.floor(Math.random() * (COLS - pieceWidth));
         let testX = randomCol * BLOCK_SIZE;
-        let testY = - (pieceHeight * BLOCK_SIZE) - 5; 
-
+        let testY = - (pieceHeight * BLOCK_SIZE) - 5;
         let newBox = {
             minX: testX,
             maxX: testX + (pieceWidth * BLOCK_SIZE),
             minY: testY,
             maxY: testY + (pieceHeight * BLOCK_SIZE)
         };
-
         let overlap = false;
         for (let p of state.pieces) {
             let pBox = p.getBoundingBox();
@@ -482,12 +486,13 @@ canvas.addEventListener('pointerdown', (e) => {
     for (let i = state.pieces.length - 1; i >= 0; i--) {
         let p = state.pieces[i];
         let clicked = false;
+    
         for (let b of p.blocks) {
             let bx = p.x + b.x * BLOCK_SIZE;
             let by = p.y + b.y * BLOCK_SIZE;
             if (clickX >= bx && clickX <= bx + BLOCK_SIZE && clickY >= by && clickY <= by + BLOCK_SIZE) {
                 clicked = true;
-                break;
+                 break;
             }
         }
         if (clicked) { rotatePiece(i); break; }
@@ -509,16 +514,18 @@ function findLargestColorRectangle(piece) {
         let blockMap = new Set(blocks.map(b => `${b.x},${b.y}`));
 
         for (let b of blocks) {
-            let startX = b.x; let startY = b.y;
+            let startX = b.x;
+            let startY = b.y;
             let maxWidth = 1;
             while (blockMap.has(`${startX + maxWidth},${startY}`)) maxWidth++;
-
             for (let w = 2; w <= maxWidth; w++) {
-                let h = 1; let valid = true;
+                let h = 1;
+                let valid = true;
                 while (valid) {
                     for (let dx = 0; dx < w; dx++) {
                         if (!blockMap.has(`${startX + dx},${startY + h}`)) {
-                            valid = false; break;
+                            valid = false;
+                            break;
                         }
                     }
                     if (valid) h++;
@@ -547,16 +554,22 @@ function updateScore(points) {
     uiScore.innerText = state.score;
     
     let threshold = Math.floor(state.score / 500);
-    if (threshold > state.lastThreshold) {
-        state.floorLevel = Math.max(0, state.floorLevel - (threshold - state.lastThreshold));
+    let drop = threshold - state.lastThreshold;
+    
+    // Controlla se il pavimento scende e riproduci il suono
+    if (drop > 0) {
+        let oldLevel = state.floorLevel;
+        state.floorLevel = Math.max(0, state.floorLevel - drop);
         state.lastThreshold = threshold;
+        if (state.floorLevel < oldLevel) {
+            playSound('WALL-DOWN.mp3');
+        }
     }
 }
 
 function processPieceDestruction(pieceIndex) {
     let p = state.pieces[pieceIndex];
     let rect = findLargestColorRectangle(p);
-    
     if (rect) {
         updateScore(rect.blocksToRemove.size * 10);
         p.blocks = p.blocks.filter(b => !rect.blocksToRemove.has(`${b.x},${b.y}`));
@@ -566,12 +579,12 @@ function processPieceDestruction(pieceIndex) {
 
 function splitPiece(piece, pieceIndex) {
     if (piece.blocks.length === 0) {
-        state.pieces.splice(pieceIndex, 1); return;
+        state.pieces.splice(pieceIndex, 1);
+        return;
     }
     
     let visited = new Set();
     let components = [];
-    
     function getAdjacents(block) {
         return piece.blocks.filter(b => 
             (Math.abs(b.x - block.x) === 1 && b.y === block.y) || 
@@ -582,9 +595,11 @@ function splitPiece(piece, pieceIndex) {
     for (let b of piece.blocks) {
         let key = `${b.x},${b.y}`;
         if (!visited.has(key)) {
-            let comp = []; let queue = [b]; visited.add(key);
+            let comp = [];
+            let queue = [b]; visited.add(key);
             while (queue.length > 0) {
-                let curr = queue.shift(); comp.push(curr);
+                let curr = queue.shift();
+                comp.push(curr);
                 let neighbors = getAdjacents(curr);
                 for (let n of neighbors) {
                     let nKey = `${n.x},${n.y}`;
@@ -619,7 +634,6 @@ function getTargetBlockInfo() {
             let b = p.blocks[j];
             let absX = p.x + b.x * BLOCK_SIZE;
             let absY = p.y + b.y * BLOCK_SIZE;
-            
             if (Math.abs(absX - targetX) < 5) { 
                 if (absY > lowestY) {
                     lowestY = absY;
@@ -632,16 +646,32 @@ function getTargetBlockInfo() {
 }
 
 function shoot(weaponType) {
-    let target = getTargetBlockInfo(); 
+    let target = getTargetBlockInfo();
 
-    if (target) {
-        let p = target.piece;
-        let pIdx = target.pieceIndex;
+    if (weaponType === 'white') {
+        // Controllo Cooldown Laser
+        if (state.laserCooldown > 0) {
+            playSound('LASER-FAIL.mp3');
+            return; // Blocca lo sparo se in cooldown
+        }
         
-        if (weaponType === 'white') {
+        playSound('LASER-BTN.mp3');
+        state.laserCooldown = 1.0; // Imposta 1 secondo di ricarica
+        document.getElementById('btn-fire-white').style.opacity = '0.5'; // Abbassa l'opacità per feedback visivo
+
+        if (target) {
+            let p = target.piece;
+            let pIdx = target.pieceIndex;
             p.blocks.splice(target.blockIndex, 1);
             splitPiece(p, pIdx);
-        } else if (weaponType === 'color') {
+        }
+        
+    } else if (weaponType === 'color') {
+        playSound('FIRE-BTN.mp3');
+        
+        if (target) {
+            let p = target.piece;
+            let pIdx = target.pieceIndex;
             let b = target.block;
             p.blocks.push({
                 x: b.x, y: b.y + 1, color: COLORS[state.player.selectedColorIndex]
@@ -651,17 +681,35 @@ function shoot(weaponType) {
     }
 }
 
+// Nuova funzione per la rotazione tramite pulsante
+function rotateTargetPiece() {
+    playSound('COLOR-BTN.mp3');
+    let target = getTargetBlockInfo();
+    if (target) {
+        rotatePiece(target.pieceIndex);
+    }
+}
+
 function update(dt) {
     if (state.isGameOver || !gameStarted) return;
 
     state.time += dt;
     uiTime.innerText = Math.floor(state.time);
 
+    // Gestione Cooldown del Laser
+    if (state.laserCooldown > 0) {
+        state.laserCooldown -= dt;
+        if (state.laserCooldown <= 0) {
+            state.laserCooldown = 0;
+            playSound('LASER-READY.mp3');
+            document.getElementById('btn-fire-white').style.opacity = '1.0'; // Riaccende il bottone
+        }
+    }
+
     trySpawnPiece();
 
     let floorY = GAME_HEIGHT - (state.floorLevel * BLOCK_SIZE);
     let cannonY = floorY - BLOCK_SIZE;
-
     if (cannonY <= 0) {
         state.isGameOver = true;
         finalScoreDisplay.innerText = state.score;
@@ -674,17 +722,21 @@ function update(dt) {
         let p = state.pieces[i];
         p.y += p.speed * dt;
         let maxY = Math.max(...p.blocks.map(b => p.y + b.y * BLOCK_SIZE)) + BLOCK_SIZE;
-        if (maxY >= floorY) { state.pieces.splice(i, 1); state.floorLevel++; }
+        if (maxY >= floorY) { 
+            state.pieces.splice(i, 1); 
+            state.floorLevel++; 
+            playSound('WALL-UP.mp3'); // Suono muro che sale
+        }
     }
 }
 
 function draw() {
     ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-    
     ctx.strokeStyle = '#333';
     ctx.lineWidth = 1;
     for(let i=1; i<COLS; i++) {
-        ctx.beginPath(); ctx.moveTo(i * BLOCK_SIZE, 0); ctx.lineTo(i * BLOCK_SIZE, GAME_HEIGHT); ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(i * BLOCK_SIZE, 0); ctx.lineTo(i * BLOCK_SIZE, GAME_HEIGHT); ctx.stroke();
     }
 
     let floorHeightPx = state.floorLevel * BLOCK_SIZE;
@@ -696,35 +748,34 @@ function draw() {
     ctx.fillRect(cannonX, 0, BLOCK_SIZE, GAME_HEIGHT - floorHeightPx);
 
     let cannonY = GAME_HEIGHT - floorHeightPx - BLOCK_SIZE;
-    
     ctx.fillStyle = '#AAA';
     ctx.beginPath();
     ctx.moveTo(cannonX, cannonY + BLOCK_SIZE);
     ctx.lineTo(cannonX + BLOCK_SIZE, cannonY + BLOCK_SIZE);
     ctx.lineTo(cannonX + BLOCK_SIZE/2, cannonY);
     ctx.fill();
-
     ctx.strokeStyle = 'rgba(255,255,255,0.08)';
     ctx.setLineDash([10, 15]);
     ctx.beginPath();
     ctx.moveTo(cannonX + BLOCK_SIZE/2, cannonY); ctx.lineTo(cannonX + BLOCK_SIZE/2, 0); ctx.stroke();
     ctx.setLineDash([]);
-
     for (let p of state.pieces) p.draw(ctx);
 
     let target = getTargetBlockInfo();
     if (target) {
-        let tx = target.absX; let ty = target.absY; let s = BLOCK_SIZE; let l = 16; 
-        let pulse = Math.abs(Math.sin(state.time * 6)) * 0.4 + 0.6; 
-        
+        let tx = target.absX; let ty = target.absY;
+        let s = BLOCK_SIZE; let l = 16; 
+        let pulse = Math.abs(Math.sin(state.time * 6)) * 0.4 + 0.6;
         ctx.strokeStyle = COLORS[state.player.selectedColorIndex]; 
         ctx.globalAlpha = pulse; ctx.lineWidth = 4;
         
         ctx.beginPath();
         ctx.moveTo(tx, ty + l); ctx.lineTo(tx, ty); ctx.lineTo(tx + l, ty);
         ctx.moveTo(tx + s - l, ty); ctx.lineTo(tx + s, ty); ctx.lineTo(tx + s, ty + l);
-        ctx.moveTo(tx + s, ty + s - l); ctx.lineTo(tx + s, ty + s); ctx.lineTo(tx + s - l, ty + s);
-        ctx.moveTo(tx + l, ty + s); ctx.lineTo(tx, ty + s); ctx.lineTo(tx, ty + s - l);
+        ctx.moveTo(tx + s, ty + s - l); ctx.lineTo(tx + s, ty + s);
+        ctx.lineTo(tx + s - l, ty + s);
+        ctx.moveTo(tx + l, ty + s); ctx.lineTo(tx, ty + s);
+        ctx.lineTo(tx, ty + s - l);
         ctx.stroke();
         ctx.globalAlpha = 1.0; 
     }
@@ -732,21 +783,29 @@ function draw() {
 
 function loop(timestamp) {
     if (!gameStarted) return;
-    
     let dt = (timestamp - lastTime) / 1000;
     lastTime = timestamp;
     if (dt > 0.1) dt = 0.1; 
 
     update(dt);
     draw();
-
     if (!state.isGameOver) {
         requestAnimationFrame(loop);
     }
 }
 
-function moveLeft() { if(state.player.col > 0) state.player.col--; }
-function moveRight() { if(state.player.col < COLS - 1) state.player.col++; }
+function moveLeft() { 
+    if(state.player.col > 0) {
+        state.player.col--;
+        playSound('LEFT-BTN.mp3');
+    }
+}
+function moveRight() { 
+    if(state.player.col < COLS - 1) {
+        state.player.col++; 
+        playSound('RIGHT-BTN.mp3');
+    }
+}
 
 // Eventi pressione prolungata (Sinistra/Destra)
 function addHoldListener(btnId, action) {
@@ -758,11 +817,17 @@ function addHoldListener(btnId, action) {
 
     btn.addEventListener('pointerdown', start);
     btn.addEventListener('pointerup', stop);
-    btn.addEventListener('pointerleave', stop); 
+    btn.addEventListener('pointerleave', stop);
 }
 
 addHoldListener('btn-left', moveLeft);
 addHoldListener('btn-right', moveRight);
+
+// Evento rotazione tramite bottone
+document.getElementById('btn-cycle').addEventListener('pointerdown', (e) => { 
+    e.preventDefault(); 
+    rotateTargetPiece(); 
+});
 
 // Eventi Fuoco
 document.getElementById('btn-fire-color').addEventListener('pointerdown', (e) => { e.preventDefault(); shoot('color'); });
@@ -772,6 +837,7 @@ document.getElementById('btn-fire-white').addEventListener('pointerdown', (e) =>
 window.addEventListener('keydown', (e) => {
     if(e.code === 'ArrowLeft') moveLeft();
     if(e.code === 'ArrowRight') moveRight();
+    if(e.code === 'ArrowUp' || e.code === 'KeyC') rotateTargetPiece(); // Cambiato per ruotare al posto di ciclare colore
     if(e.code === 'Space') shoot('color');
     if(e.code === 'ShiftLeft' || e.code === 'ShiftRight') shoot('white');
     
@@ -785,5 +851,3 @@ window.addEventListener('keydown', (e) => {
 </script>
 </body>
 </html>
-
-
